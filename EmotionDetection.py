@@ -1,16 +1,23 @@
 from __future__ import print_function
 import os
+import ray
 import cv2
+import time
 import keras
+import queue
 import numpy as np
 from time import sleep
 from keras import layers
+import concurrent.futures
+from threading import Thread
 from keras.models import Model
 from keras.layers import Input
+import PersonalAssistant as pa
 from keras.layers import Flatten
 from keras.regularizers import l2
 from keras.models import Sequential
 from keras.models import load_model
+from multiprocessing import Process
 from keras.layers import MaxPooling2D
 from keras.layers import SeparableConv2D
 from keras.layers import Conv2D, MaxPooling2D
@@ -23,6 +30,7 @@ from keras.layers import AveragePooling2D, BatchNormalization
 from keras.layers import Activation, Convolution2D, Dropout, Conv2D
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
+from multiprocessing import Process
 
 num_features = 64
 num_classes = 6
@@ -340,7 +348,6 @@ print(class_labels)
 
 face_classifier = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
 
-
 def face_detector(img):
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -358,38 +365,55 @@ def face_detector(img):
         return (x, w, y, h), np.zeros((48, 48), np.uint8), img
     return (x, w, y, h), roi_gray, img
 
+name = 'Nabeel'
+
+def playSound():
+    pa.speak('Hello {}, How are you'.format(name))
+
+
+def startSoundThread():
+         mus = Thread(target=playSound)
+         mus.start()
+         q = queue.Queue()
+         listener = Thread(target=pa.get_audio, args=(q,)).start()
+         result = q.get()
+         print(result)
+
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     audioThread = executor.submit(playSound)
 
 def make_prediction():
     cap = cv2.VideoCapture(0)
-    confirmation = input('type yes if you want to detect the expressions: ')
-    while True:
-        ret, frame = cap.read()
-        rect, face, image = face_detector(frame)
-        if confirmation == 'y':
+    #confirmation = input('type yes if you want to detect the expressions: ')
+    counter = 1
+    while cap.isOpened():
+        while True:
+            ret, frame = cap.read()
+            rect, face, image = face_detector(frame)
             emotion_detector(rect,face,image)
-        # if np.sum([face]) != 0.0:
-        #     roi = face.astype("float") / 255.0
-        #     roi = img_to_array(roi)
-        #     roi = np.expand_dims(roi, axis=0)
-        #
-        #     # make a prediction on the ROI, then lookup the class
-        #     preds = classifier.predict(roi)[0]
-        #     label = class_labels[preds.argmax()]
-        #     print(label)
-        #     label_position = (rect[0] + int((rect[1] / 2)), rect[2] + 25)
-        #     cv2.putText(image, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
-        # else:
-        #     cv2.putText(image, "No Face Found", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
-
-            cv2.imshow('All', image)
+            Show_cam(image)
+            if counter == 1:
+                startSoundThread()
+                #text = pa.get_audio()
+                #print(text)
+                counter = -1
+            # if counter == -1:
+            #     q = queue.Queue()
+            #     listener = Thread(target=pa.get_audio, args=(q,)).start()
+            #     result = q.get()
+            #     print(result)
+            #     counter = 2
+            #Show_cam(image)
             if cv2.waitKey(1) == 13:  # 13 is the Enter Key
                 break
-        else:
-            cv2.imshow('All', image)
-            if cv2.waitKey(1) == 13:  # 13 is the Enter Key
-                break
-    cap.release()
-    cv2.destroyAllWindows()
+            # else:
+            #     Show_cam(image)
+            #     if cv2.waitKey(1) == 13:  # 13 is the Enter Key
+            #         break
+        cap.release()
+        cv2.destroyAllWindows()
+    else:
+        pa.speak('Camera is disconnected. Good bye.')
 
 
 def emotion_detector(rect, face, image):
@@ -409,5 +433,14 @@ def emotion_detector(rect, face, image):
         cv2.putText(image, "No Face Found", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
     return label
 
+def Show_cam(image):
+    cv2.imshow('All', image)
 
-make_prediction()
+
+
+# pa.speak('hi')x`
+if __name__ == '__main__':
+    make_prediction()
+    # mus = Thread(target=playSound)
+    # mus.start()
+

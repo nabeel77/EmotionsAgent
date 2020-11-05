@@ -1,9 +1,11 @@
 from __future__ import print_function
 import os
+import ray
 import time
 import pickle
 import os.path
 import datetime
+import pyttsx3
 from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
@@ -36,22 +38,24 @@ def playWav(filename):
 
 
 def speak(sentence):
-    tts = gTTS(text=sentence, lang='en')
-    # try:
-    #     tempAudio = TemporaryFile()
-    filename = './new.mp3'
-    tts.save(filename)
-        # tempAudio.seek(0)
-    playMp3(filename)
-    #     tempAudio.close()
-    # except Exception as e:
-    #     print('Exception arised: ' + str(e))
+    #tts = gTTS(text=sentence, lang='en')
+    # # try:
+    # #     tempAudio = TemporaryFile()
+    #filename = './new.mp3'
+    #tts.save(filename)
+    # #    tempAudio.seek(0)
+    #playMp3(filename)
+    # #    tempAudio.close()
+    # # except Exception as e:
+    # #     print('Exception arised: ' + str(e))
+    engine = pyttsx3.init()
+    engine.say(sentence)
+    engine.runAndWait()
 
 
-def get_audio():
+def get_audio(q):
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print('sample rate')
         r.adjust_for_ambient_noise(source)
         print('say something')
         audio = r.listen(source)
@@ -62,14 +66,6 @@ def get_audio():
         except Exception as e:
             print('Exception: ' + str(e))
     return said
-
-
-text = get_audio()
-if 'hello' in text:
-    speak('hello, how are you?')
-elif 'hi' in text:
-    speak('hi, how are you?')
-
 
 # If modifying these scopes, delete the file token.pickle.
 def authenticate_google():
@@ -104,15 +100,33 @@ def get_events(n, service):
     events = events_result.get('items', [])
 
     if not events:
-        print('No upcoming events found.')
+        pass
+        # print('No upcoming events found.')
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
+        # print(start, event['summary'])
 
 
 def get_date(text):
     text = text.lower()
 
-
-service = authenticate_google()
-get_events(10, service)
+if __name__ == '__main__':
+    # engine = pyttsx3.init()
+    # engine.say("I will speak this text")
+    # voices = engine.getProperty('voices')
+    # engine.setProperty('voice', voice.id)
+    # engine.runAndWait()
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        engine.setProperty('voice', voice.id)  # changes the voice
+        engine.say('The quick brown fox jumped over the lazy dog.')
+    engine.runAndWait()
+    #speak('Yo nigga')
+    # text = get_audio()
+    # if 'hello' in text:
+    #     speak('hello, how are you?')
+    # elif 'hi' in text:
+    #     speak('hi, how are you?')
+    # service = authenticate_google()
+    # get_events(10, service)
