@@ -53,7 +53,7 @@ def speak(sentence):
     engine.runAndWait()
 
 
-def get_audio(q):
+def get_audio():
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)

@@ -31,6 +31,9 @@ from keras.layers import Activation, Convolution2D, Dropout, Conv2D
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from multiprocessing import Process
+import ctypes
+import argparse
+from multiprocessing import Array, Value, Process
 
 num_features = 64
 num_classes = 6
@@ -365,19 +368,18 @@ def face_detector(img):
         return (x, w, y, h), np.zeros((48, 48), np.uint8), img
     return (x, w, y, h), roi_gray, img
 
-name = 'Nabeel'
+name = 'Hello Nabeel, how are you'
 
-def playSound():
-    pa.speak('Hello {}, How are you'.format(name))
-
+# def playSound():
+#     pa.speak('Hello {}, How are you'.format(name))
 
 def startSoundThread():
-         mus = Thread(target=playSound)
+         mus = Thread(target=pa.speak, args=[name])
          mus.start()
-         q = queue.Queue()
-         listener = Thread(target=pa.get_audio, args=(q,)).start()
-         result = q.get()
-         print(result)
+         # q = queue.Queue()
+         # listener = Thread(target=pa.get_audio, args=(q,)).start()
+         # result = q.get()
+         # print(result)
 
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     audioThread = executor.submit(playSound)
@@ -439,8 +441,138 @@ def Show_cam(image):
 
 
 # pa.speak('hi')x`
-if __name__ == '__main__':
-    make_prediction()
+# if __name__ == '__main__':
+#     make_prediction()
     # mus = Thread(target=playSound)
     # mus.start()
 
+class VideoCapture:
+    """
+    Class that handles video capture from device or video file
+    """
+    def __init__(self, device=0, delay=0.):
+        """
+        :param device: device index or video filename
+        :param delay: delay between frame captures in seconds(floating point is allowed)
+        """
+        self._cap = cv2.VideoCapture(device)
+        self._delay = delay
+
+    def _proper_frame(self, delay=None):
+        """
+        :param delay: delay between frames capture(in seconds)
+        :param finished: synchronized wrapper for int(see multiprocessing.Value)
+        :return: frame
+        """
+        snapshot = None
+        correct_img = False
+        fail_counter = -1
+        while not correct_img:
+            # Capture the frame
+            correct_img, snapshot = self._cap.read()
+            fail_counter += 1
+            # Raise exception if there's no output from the device
+            if fail_counter > 10:
+                raise Exception("Capture: exceeded number of tries to capture the frame.")
+            # Delay before we get a new frame
+            time.sleep(delay)
+        return snapshot
+
+    def get_size(self):
+        """
+        :return: size of the captured image
+        """
+        return (int(self._cap.get(int(cv2.CAP_PROP_FRAME_HEIGHT))),
+                int(self._cap.get(int(cv2.CAP_PROP_FRAME_WIDTH))), 3)
+
+    def get_stream_function(self):
+        """
+        Returns stream_function object function
+        """
+
+        def stream_function(image, finished):
+            """
+            Function keeps capturing frames until finished = 1
+            :param image: shared numpy array for multiprocessing(see multiprocessing.Array)
+            :param finished: synchronized wrapper for int(see multiprocessing.Value)
+            :return: nothing
+            """
+            # Incorrect input array
+            if image.shape != self.get_size():
+                raise Exception("Capture: improper size of the input image")
+            print("Capture: start streaming")
+            # Capture frame until we get finished flag set to True
+            while not finished.value:
+                image[:, :, :] = self._proper_frame(self._delay)
+            # Release the device
+            self.release()
+
+        return stream_function
+
+    def release(self):
+        self._cap.release()
+
+
+def main():
+    # Add program arguments
+    parser = argparse.ArgumentParser(description='Captures the video from the webcamera and \nwrites it into the output file with predefined fps.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-output', dest="output",  default="output.avi", help='name of the output video file')
+    parser.add_argument('-log', dest="log",  default="frames.log", help='name of the log file')
+    parser.add_argument('-fps', dest="fps",  default=25., help='frames per second value')
+
+    # Read the arguments if any
+    result = parser.parse_args()
+    fps = float(result.fps)
+    output = result.output
+    log = result.log
+
+    # Initialize VideoCapture object and auxilary objects
+    cap = VideoCapture()
+    shape = cap.get_size()
+    stream = cap.get_stream_function()
+
+    # Define shared variables(which are synchronised so race condition is excluded)
+    shared_array_base = Array(ctypes.c_uint8, shape[0] * shape[1] * shape[2])
+    frame = np.ctypeslib.as_array(shared_array_base.get_obj())
+    frame = frame.reshape(shape[0], shape[1], shape[2])
+    finished = Value('i', 0)
+
+    # Start processes which run in parallel
+    video_process = Process(target=stream, args=(frame, finished))
+    video_process.start()  # Launch capture process
+
+    # Sleep for some time to allow videocapture start working first
+    time.sleep(2)
+
+    # Termination function
+    def terminate():
+        print("Main: termination")
+        finished.value = True
+        # Wait for all processes to finish
+        time.sleep(1)
+        # Terminate working processes
+        video_process.terminate()
+
+    # The capturing works until keyboard interrupt is pressed.
+    counter = 1
+    while True:
+        try:
+            # Display the resulting frame
+            rect, face, image = face_detector(frame)
+            emotion_detector(rect, face, image)
+            if counter == 1:
+                startSoundThread()
+                p = Thread(target=pa.get_audio)
+                p.start()
+                counter = -1
+            cv2.imshow('frame', frame)
+            cv2.waitKey(1)  # Display it at least one ms before going to the next frame
+            time.sleep(0.1)
+
+        except KeyboardInterrupt:
+            cv2.destroyAllWindows()
+            terminate()
+            break
+
+if __name__ == '__main__':
+    main()
