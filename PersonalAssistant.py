@@ -19,6 +19,7 @@ import gtts_token as gt
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+DAY_EXTENSIONS = ['rd', 'th', 'st']
 # pyaudio.PyAudio().open(format=pyaudio.paInt16,
 #                         rate=44100,
 #                         channels=2, #change this to what your sound card supports
@@ -38,19 +39,19 @@ def playWav(filename):
 
 
 def speak(sentence):
-    #tts = gTTS(text=sentence, lang='en')
+    tts = gTTS(text=sentence, lang='en')
     # # try:
     # #     tempAudio = TemporaryFile()
-    #filename = './new.mp3'
-    #tts.save(filename)
+    filename = './new.mp3'
+    tts.save(filename)
     # #    tempAudio.seek(0)
-    #playMp3(filename)
+    playMp3(filename)
     # #    tempAudio.close()
     # # except Exception as e:
     # #     print('Exception arised: ' + str(e))
-    engine = pyttsx3.init()
-    engine.say(sentence)
-    engine.runAndWait()
+    # engine = pyttsx3.init()
+    # engine.say(sentence)
+    # engine.runAndWait()
 
 
 def get_audio():
@@ -109,8 +110,46 @@ def get_events(n, service):
 
 def get_date(text):
     text = text.lower()
+    today = datetime.date.today()
+    if text.count('today') > 0:
+        return today
+    day = -1
+    day_of_week = -1
+    month = -1
+    year = today.year
+    for word in text.split():
+        if word in MONTHS:
+            month = MONTHS.index(word)+1
+        elif word in DAYS:
+            day_of_week = DAYS.index(word)
+        elif word.isdigit():
+            day = int(word)
+        else:
+            for ext in DAY_EXTENSIONS:
+                found = word.find(ext)
+                if found > 0:
+                    try:
+                        day = int(word[:found])
+                    except:
+                        pass
+    if month < today.month and month != -1:
+        year += 1
+    if day < today.day and month == -1 and day != -1:
+        month += 1
+    if month == -1 and day == -1 and day_of_week != -1:
+        current_day_of_week = today.weekday()
+        diff = day_of_week - current_day_of_week
+        if diff < 0:
+            diff += 7
+            if text.count('next') >= 1:
+                diff += 7
+        return today + datetime.timedelta(diff)
+    return datetime.date(month = month, day = day, year = year)
 
+# print(get_date(text))
 if __name__ == '__main__':
+    get_date('asd')
+    text = get_audio().lower()
     # engine = pyttsx3.init()
     # engine.say("I will speak this text")
     # voices = engine.getProperty('voices')
