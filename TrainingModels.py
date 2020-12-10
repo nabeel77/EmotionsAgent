@@ -3,14 +3,11 @@ from keras.regularizers import l2
 from keras.optimizers import RMSprop, SGD, Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-num_features = 64
-num_classes = 6
-height, width = 48, 48
-epochs = 100
-batch_size = 64
 
 train_data_dir = './fer2013/train'
 validation_data_dir = './fer2013/validation'
+BS = 128
+Resize_pixelsize = 197
 
 # Using data augmentation
 train_datagen = ImageDataGenerator(
@@ -27,63 +24,38 @@ train_datagen = ImageDataGenerator(
     horizontal_flip=True,
     vertical_flip=False)
 
-validation_datagen = ImageDataGenerator(rescale=1. / 255)
+    if modelType == 'TransferLearning':
+        return datagen.flow_from_directory(
+            dataset,
+            target_size=(197, 197),
+            color_mode='rgb',
+            shuffle=True,
+            class_mode='categorical',
+            batch_size=BS)
+    else:
+        return datagen.flow_from_directory(
+            dataset,
+            target_size=(48, 48),
+            color_mode='grayscale',
+            shuffle=True,
+            class_mode='categorical',
+            batch_size=BS)
 
-validation_generator = validation_datagen.flow_from_directory(
-    validation_data_dir,
-    color_mode='grayscale',
-    target_size=(height, width),
-    batch_size=batch_size,
-    class_mode='categorical',
-    shuffle=True)
 
-train_generator = train_datagen.flow_from_directory(
-    train_data_dir,
-    color_mode='grayscale',
-    target_size=(height, width),
-    batch_size=batch_size,
-    class_mode='categorical',
-    shuffle=True)
-
-checkpoint = ModelCheckpoint("./emotion.h5",
-                             monitor="val_loss",
-                             mode="min",
-                             save_best_only=True,
-                             verbose=1)
-
-earlystop = EarlyStopping(monitor='val_loss',
-                          min_delta=0,
-                          patience=20,
-                          verbose=0,
-                          restore_best_weights=True)
-
-reduce_lr = ReduceLROnPlateau(
-    monitor='val_loss', factor=0.1,
-    patience=10, verbose=0, mode='auto',
-    min_delta=0.0001, cooldown=0, min_lr=0)
-
-# we put our call backs into a callback list
-callbacks = [earlystop, checkpoint, reduce_lr]
 if __name__ == '__main__':
-    Models.get_model1().compile(
-        loss='categorical_crossentropy',
-        optimizer='adam',
-        metrics=['accuracy'])
-
-    Models.get_model2().compile(
-        loss='categorical_crossentropy',
-        optimizer='adam',
-        metrics=['accuracy'])
-
-    Models.get_model3().compile(
-        loss='categorical_crossentropy',
-        optimizer='adam',
-        metrics=['accuracy'])
-
-    Models.get_model4().compile(
-        loss='categorical_crossentropy',
-        optimizer='adam',
-        metrics=['accuracy'])
+    # compiling models
+    model1 = Models.FERC2()
+    model1.compile(optimizer=Adam(lr=0.0005), loss='categorical_crossentropy', metrics=['accuracy'])
+    model1.summary()
+    model2 = Models.FERC()
+    model2.compile(optimizer=Adam(lr=0.0005), loss='categorical_crossentropy', metrics=['accuracy'])
+    model2.summary()
+    model3 = Models.ResNet50()
+    model3.compile(optimizer=Adam(lr=0.0005), loss='categorical_crossentropy', metrics=['accuracy'])
+    model3.summary()
+    model4 = Models.Proposed_model()
+    model4.compile(optimizer=Adam(lr=0.0005), loss='categorical_crossentropy', metrics=['accuracy'])
+    model4.summary()
 
     nb_train_samples = 28273
     nb_validation_samples = 3534
@@ -107,14 +79,16 @@ if __name__ == '__main__':
         validation_data=validation_generator,
         validation_steps=nb_validation_samples // batch_size)
 
-    history3 = Models.model3.fit_generator(
-        train_generator,
-        steps_per_epoch=nb_train_samples // batch_size,
-        epochs=epochs,
-        verbose=1,
-        callbacks=callbacks,
-        validation_data=validation_generator,
-        validation_steps=nb_validation_samples // batch_size)
+            history_FERC2 = model2.fit(
+                x=train_generator,
+                steps_per_epoch=24176 // BS,
+                epochs=50,
+                validation_data=validation_generator,
+                validation_steps=3006 // BS,
+                callbacks=callbacks
+            )
+            with open('./FERC2_History', 'wb') as file_pi:
+                pickle.dump(history_FERC2.history, file_pi)
 
     history4 = Models.model4.fit_generator(
         train_generator,
