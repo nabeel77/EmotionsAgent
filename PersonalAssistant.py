@@ -1,4 +1,7 @@
-from __future__ import print_function
+'''
+Personal assistant is being implemented in this file
+'''
+
 import os
 import ray
 import time
