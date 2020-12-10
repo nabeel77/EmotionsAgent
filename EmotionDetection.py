@@ -49,27 +49,46 @@ print(classes)
 
 face_classifier = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
 
-def face_detector(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+
+def face_detector_color(img):
+    color = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    faces = face_classifier.detectMultiScale(color, 1.3, 5)
     if faces is ():
-        return (0, 0, 0, 0), np.zeros((48, 48), np.uint8), img
+        return (0, 0, 0, 0), np.zeros((197, 197), np.uint8), img
 
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        roi_gray = gray[y:y + h, x:x + w]
+        roi_color = color[y:y + h, x:x + w]
 
     try:
-        roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+        roi_color = cv2.resize(roi_color, (197, 197), interpolation=cv2.INTER_AREA)
     except:
-        return (x, w, y, h), np.zeros((48, 48), np.uint8), img
-    return (x, w, y, h), roi_gray, img
+        return (x, w, y, h), np.zeros((197, 197), np.uint8), img
+    return (x, w, y, h), roi_color, img
 
+
+# def face_detector(img):
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#     faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+#     if faces is ():
+#         return (0, 0, 0, 0), np.zeros((48, 48), np.uint8), img
+#
+#     for (x, y, w, h) in faces:
+#         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+#         roi_gray = gray[y:y + h, x:x + w]
+#
+#     try:
+#         roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+#     except:
+#         return (x, w, y, h), np.zeros((48, 48), np.uint8), img
+#     return (x, w, y, h), roi_gray, img
 name = 'Hello Nabeel, how are you'
 
+
 def startSoundThread():
-         mus = Thread(target=pa.speak, args=[name])
-         mus.start()
+    mus = Thread(target=pa.speak, args=[name])
+    mus.start()
+
 
 # def make_prediction():
 #     cap = cv2.VideoCapture(0)
