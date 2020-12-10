@@ -1,9 +1,16 @@
-import keras
-from keras import layers
-from keras.models import Sequential
-from keras.layers import MaxPooling2D
-from keras.layers import Convolution2D
-from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
+'''
+Things done in this file:
+- Define the structures of all four models
+'''
+
+from tensorflow.keras.layers import *
+from keras_vggface.vggface import VGGFace
+from keras.models import Model, Sequential
+from tensorflow.python.lib.io import file_io
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from keras.layers import Dense, Input, Dropout, Flatten, Conv2D
+from keras.layers import BatchNormalization, Activation, MaxPooling2D, MaxPool2D
 
 num_features = 64
 num_classes = 5
@@ -110,12 +117,12 @@ def FERC():
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
 
-  model.add(Flatten())
+    model.add(Flatten())
 
-  model.add(Dense(256))
-  model.add(BatchNormalization())
-  model.add(Activation('relu'))
-  model.add(Dropout(0.25))
+    model.add(Dense(256))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
 
     model.add(Dense(512))
     model.add(BatchNormalization())
