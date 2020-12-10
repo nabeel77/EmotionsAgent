@@ -1,46 +1,30 @@
+'''
+Things done in this python file:
+- Face and Emotion detection is done in this python file
+Things to be done in this python file:
+- Agent calls
+'''
+
 import ctypes
-import os
-import ray
 import cv2
 import time
-import queue
 import argparse
 import numpy as np
-from time import sleep
-import concurrent.futures
+import TrainingModels as tm
 from threading import Thread
-from keras.models import Model
-from keras.layers import Input
 import PersonalAssistant as pa
-from keras.layers import Flatten
-from keras.models import Sequential
 from keras.models import load_model
 from multiprocessing import Process, Array, Value
 from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import ImageDataGenerator
 
 height, width = 48, 48
 batch_size = 64
 validation_data_dir = './fer2013/validation'
-validation_datagen = ImageDataGenerator(rescale=1. / 255)
-validation_generator = validation_datagen.flow_from_directory(
-    validation_data_dir,
-    color_mode='grayscale',
-    target_size=(height, width),
-    batch_size=batch_size,
-    class_mode='categorical',
-    shuffle=True)
 
-classifier = load_model('./e.h5')
+classifier = load_model('./model3.h5')
 print('model loaded')
 
-validation_generator = validation_datagen.flow_from_directory(
-        validation_data_dir,
-        color_mode = 'grayscale',
-        target_size=(height, width),
-        batch_size=batch_size,
-        class_mode='categorical',
-        shuffle=False)
+validation_generator = tm.get_datagen(validation_data_dir)
 
 class_labels = validation_generator.class_indices
 class_labels = {v: k for k, v in class_labels.items()}
@@ -252,7 +236,7 @@ def main():
     while True:
         try:
             # Display the resulting frame
-            rect, face, image = face_detector(frame)
+            rect, face, image = face_detector_color(frame)
             emotion_detector(rect, face, image)
             if counter == 1:
                 startSoundThread()
