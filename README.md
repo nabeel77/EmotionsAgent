@@ -1,2 +1,2 @@
 # EmotionsAgent
-Intelligent agent for human like interactions
+Intelligent agent for human like interactions (Under development)
