@@ -7,8 +7,10 @@ import ray
 import time
 import pytz
 import pickle
+import random
 import os.path
 import pyttsx3
+import requests
 import datetime
 import threading
 from gtts import gTTS
@@ -21,11 +23,14 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november',
+          'december']
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 DAY_EXTENSIONS = ['rd', 'th', 'st', 'nd']
+SAD_MOOD_ACTIONS = ['would you like to hear a joke']
+POSITIVE_RESPONSE = ['yes', 'yes please', 'yes i would like that', 'that would be great', 'i like that']
+
 
 def playMp3(filename):
     mp3file = AudioSegment.from_mp3(filename)
@@ -38,6 +43,15 @@ def playWav(filename):
 
 
 def speak(sentence):
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        if voice.languages[0] == b'\x02en-gb':
+            engine.setProperty('voice', voice.id)
+            engine.setProperty("rate", 140)
+            break
+    engine.say(sentence)
+    engine.runAndWait()
     # tts = gTTS(text=sentence, lang='en')
     # # try:
     # #     tempAudio = TemporaryFile()
@@ -48,20 +62,7 @@ def speak(sentence):
     # #    tempAudio.close()
     # # except Exception as e:
     # #     print('Exception arised: ' + str(e))
-    print('name is: ', threading.current_thread().name)
-    print(threading.get_ident())
-    engine = pyttsx3.init()
-    if sentence.lower() == 'sad':
-        engine.say('why are you sad')
-        engine.runAndWait()
-    elif sentence.lower() == 'stop':
-        engine.say('bye bro')
-        engine.runAndWait()
-    else:
-        engine.say('Yo bro')
-        engine.runAndWait()
-    for t in threading.enumerate():
-        print('active thread is: ', t.name)
+
 
 
 def get_audio():
@@ -149,7 +150,7 @@ def get_date(text):
         elif word.isdigit():
             day = int(word)
         else:
-            for ext in DAY_EXTENTIONS:
+            for ext in DAY_EXTENSIONS:
                 found = word.find(ext)
                 if found > 0:
                     try:
@@ -185,28 +186,37 @@ def get_date(text):
 
 
 SERVICE = authenticate_google()
+
+
+def joke_generator():
+    joke_category_list = ['cat', 'dog', 'wife', 'husband', 'car', 'bike', 'friend', 'ghost', 'kid', 'time', 'love',
+                          'fruit',
+                          'furniture', 'sky diving', 'book', 'boy', 'girl']
+    jokeitem = random.choice(joke_category_list)
+    information = requests.get(f"https://icanhazdadjoke.com/search?term={jokeitem}",
+                               headers={"Accept": "application/json"})
+    connection = information.ok
+    result = information.json()
+    l_no_of_jokes = result["results"]
+    no_of_jokes = len(l_no_of_jokes)
+    select_joke = random.randrange(0, no_of_jokes)
+    return l_no_of_jokes[select_joke]['joke']
+
+
+def decision(mood):
+    if mood == 'sad':
+        speak('you look sad')
+        action = random.choice(SAD_MOOD_ACTIONS)
+        i = SAD_MOOD_ACTIONS.index(action)
+        speak(action)
+        text = get_audio()
+        if text in POSITIVE_RESPONSE:
+            if i == 0:
+                joke = joke_generator()
+                print(joke)
+                speak(joke)
+
+
 if __name__ == '__main__':
     # testing get events function
-    text = get_audio().lower()
-# get_events(get_date(text), SERVICE)
-# get_date('asd')
-# text = get_audio().lower()
-# engine = pyttsx3.init()
-# engine.say("I will speak this text")
-# voices = engine.getProperty('voices')
-# engine.setProperty('voice', voice.id)
-# engine.runAndWait()
-# engine = pyttsx3.init()
-# voices = engine.getProperty('voices')
-# for voice in voices:
-#     engine.setProperty('voice', voice.id)  # changes the voice
-#     engine.say('The quick brown fox jumped over the lazy dog.')
-# engine.runAndWait()
-# speak('Yo nigga')
-# text = get_audio()
-# if 'hello' in text:
-#     speak('hello, how are you?')
-# elif 'hi' in text:
-#     speak('hi, how are you?')
-# service = authenticate_google()
-# get_events(10, service)
+    decision('sad')
