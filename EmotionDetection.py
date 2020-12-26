@@ -8,6 +8,7 @@ Things to be done in this python file:
 import ctypes
 import cv2
 import time
+import queue
 import argparse
 import threading
 import concurrent.futures
@@ -98,7 +99,7 @@ def emotion_detector(rect, face, image):
     return label
 
 
-def make_prediction():
+def make_prediction(queue=queue.Queue()):
     global label
     global wake
     cap = cv2.VideoCapture(0)
@@ -109,6 +110,7 @@ def make_prediction():
         rect, face, image = face_detector(frame)
         if wake == 'hey bro':
             label = emotion_detector(rect, face, image)
+            queue.put(label)
         cv2.imshow('All', image)
         if cv2.waitKey(1) == 13:
             break
@@ -119,7 +121,8 @@ def make_prediction():
 if __name__ == '__main__':
     # print('name is: ', threading.current_thread().name)
     # print(threading.get_ident())
-    m = Thread(target=make_prediction, args=())
+    queue = queue.Queue()
+    m = Thread(target=make_prediction, args=(queue,))
     m.start()
     time.sleep(3)
     while True:
@@ -128,15 +131,26 @@ if __name__ == '__main__':
         if text.count(WAKE_WORD) > 0:
             wake = 'hey bro'
             print(f'i am {wake}')
-            # speak_thread = Process(target=pa.speak, args=(label,)).start()
-            speak_thread = Thread(target=pa.speak, args=[label])
-            speak_thread.start()
-            speak_thread.join()
+            while wake == 'hey bro':
+                time.sleep(4)
+                result = queue.get()
+                print('dasda', result)
+                speak_thread = Thread(target=pa.decision, args=(result.lower(),))
+                print('started thread')
+                speak_thread.start()
+                speak_thread.join()
+                end_confirm = Thread(target=pa.speak, args=['is there anything else i can do for you?'])
+                end_confirm.start()
+                end_confirm.join()
+                text = pa.get_audio()
+                if text == 'no' or text == 'stop':
+                    wake = 'stop bro'
+                    break
         elif text == 'stop':
-            wake = 'stopping'
-            speak_thread = Thread(target=pa.speak, args=[text])
+            wake = 'good bye'
+            speak_thread = Thread(target=pa.speak, args=[wake])
             speak_thread.start()
             speak_thread.join()
-            break
+            # break
     # for t in threading.enumerate():
     #         print(t.name)
