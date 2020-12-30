@@ -1,28 +1,21 @@
 '''
 Personal assistant is being implemented in this file
 '''
+
+
 import re
-import os
-import ray
 import time
-import pytz
 import queue
-import pickle
 import random
-import os.path
 import pyttsx3
 import requests
 import datetime
 import threading
+from selenium import webdriver
 import speech_recognition as sr
 from bs4 import BeautifulSoup as bs
-from tempfile import TemporaryFile
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from selenium import webdriver
-from youtubesearchpython import VideosSearch
 from selenium.webdriver.common.by import By
+from youtubesearchpython import VideosSearch
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
