@@ -25,76 +25,18 @@ SGD_DECAY = 0.0001
 Resize_pixelsize = 197
 
 
-def FERC2():
-    # https://github.com/NJNischal/Facial-Expression-Recognition-with-CNNs/blob/master/Facial_Expression_Training.ipynb
-
-    model = Sequential()
-
-    # Conv Block 1
-    model.add(Conv2D(64, (3, 3), padding='same', input_shape=(48, 48, 1)))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Conv Block 2
-    model.add(Conv2D(128, (5, 5), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Conv Block 3
-    model.add(Conv2D(512, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Conv Block 4
-    model.add(Conv2D(512, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.3))
-
-    # Conv Block 5
-    model.add(Conv2D(512, (3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.5))
-
-    model.add(Flatten())
-
-    # Fully connected Block 1
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Fully connected Block 2
-    model.add(Dense(512))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.25))
-
-    model.add(Dense(5, activation='softmax'))
-
-    return model
-
-
 def FERC():
     # https://github.com/chinhau-lim/fer_2013/blob/master/FER_2013.ipynb
 
     model = Sequential()
 
     # 1. Conv
-    model.add(Conv2D(64, (3, 3), padding='same', input_shape=(48, 48, 1)))
+    model.add(Conv2D(64, (3, 3), padding='same', input_shape=(img_size, img_size, 1)))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
+
 
     # 2. Conv Layer
     model.add(Conv2D(128, (5, 5), padding='same'))
@@ -118,7 +60,6 @@ def FERC():
     model.add(Dropout(0.25))
 
     model.add(Flatten())
-
     model.add(Dense(256))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
@@ -130,6 +71,66 @@ def FERC():
     model.add(Dropout(0.25))
 
     model.add(Dense(5, activation='softmax'))
+    model.summary()
+    return model
+
+
+def FERC2():
+    # https://github.com/NJNischal/Facial-Expression-Recognition-with-CNNs/blob/master/Facial_Expression_Training.ipynb
+
+    model = Sequential()
+
+    # Conv Block 1
+    model.add(Conv2D(64, (3, 3), padding='same', input_shape=(48, 48, 1)))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.4))
+
+    # Conv Block 2
+    model.add(Conv2D(128, (5, 5), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    # Conv Block 3
+    model.add(Conv2D(512, (3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    # Conv Block 4
+    model.add(Conv2D(512, (3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+
+    # Conv Block 5
+    model.add(Conv2D(512, (3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.3))
+
+    model.add(Flatten())
+
+    # Fully connected Block 1
+    model.add(Dense(256))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+
+    # Fully connected Block 2
+    model.add(Dense(512))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(5, activation='softmax'))
+
     return model
 
 
@@ -168,37 +169,54 @@ def Proposed_model():
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
 
     model.add(Convolution2D(128, (3, 3), padding='same'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
 
     model.add(Convolution2D(256, (3, 3), padding='same'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
 
     model.add(Convolution2D(512, (3, 3), padding='same'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
+
+    model.add(Convolution2D(1024, (3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
+    model.add(Dropout(0.5))
+
+    model.add(Convolution2D(2048, (3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same'))
+    model.add(Dropout(0.5))
 
     model.add(Flatten())
 
     model.add(Dense(512))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
 
     model.add(Dense(256))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(128))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
 
     model.add(Dense(5))
     model.add(Activation('softmax'))
