@@ -11,6 +11,7 @@ import pyttsx3
 import requests
 import datetime
 import threading
+import subprocess
 from selenium import webdriver
 import speech_recognition as sr
 from bs4 import BeautifulSoup as bs
@@ -19,20 +20,31 @@ from youtubesearchpython import VideosSearch
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-Phrases_dict = {'sad': ['you look sad', 'it looks like you are in a sad mood', 'hey, u are sad'],
-                'happy': ['good to see you happy', 'you look happy', 'seeing you happy is great'],
-                'neutral': ['you look bored', 'being neutral can be boring']}
-actions_dict = {'sad': ['would you like to hear a joke?', 'would you like to watch comedy on youtube?'],
-                'happy': ['Here are some recommendations to celebrate happiness','would you like to watch educational videos on youtube?'],
-                'neutral': ['would you like to play the number guessing game with me?', 'would you like to hear about interesting facts?']}
-user_responses_dict = {'positive': ['yes', 'yes please', 'yes i would like that', 'that would be great', 'i like that'],
-                       'negative': ['no', 'no i don\'t want that', 'not really']}
-universal_command_dict = {'happiness_celebration': ['tell ways to celebrate happiness', 'how to celebrate happiness', 'what to do when i am happy'],
-                          'interesting_facts': ['tell me interesting facts', 'what are some interesting facts', 'tell me some interesting facts', 'tell me interesting fact'],
-                          'guess_game': ['let\'s play number guessing game', 'think of a number and i will guess']}
+
 youtube_str = 'youtube'
 joke_str = 'joke'
 wished = 0
+
+Phrases_dict = {'sad': ['you look sad', 'it looks like you are in a sad mood', 'hey, u are sad'],
+                'happy': ['good to see you happy', 'you look happy', 'seeing you happy is great'],
+                'neutral': ['you look bored', 'being neutral can be boring'],
+                'angry': ['why are you angry?', 'you look mad and angry.'],
+                'surprise': ['you look surprised', 'what makes you surprised?']}
+
+actions_dict = {'sad': ['would you like to hear a joke?', 'would you like to watch comedy on youtube?'],
+                'happy': ['Here are some recommendations to celebrate happiness','would you like to watch educational videos on youtube?'],
+                'neutral': ['would you like to play the number guessing game with me?', 'would you like to hear about interesting facts?'],
+                'angry': ['would you like to listen to relaxig music?', 'Here are some ways on how to control your anger.'],
+                'surprise':  ['would you like to write down your thoughts?', 'Do you want to note down your thoughts']}
+
+user_responses_dict = {'positive': ['yes', 'yes please', 'yes i would like that', 'that would be great', 'i like that'],
+                       'negative': ['no', 'no i don\'t want that', 'not really']}
+
+universal_command_dict = {'happiness_celebration': ['tell ways to celebrate happiness', 'how to celebrate happiness', 'what to do when i am happy'],
+                          'interesting_facts': ['tell me interesting facts', 'what are some interesting facts', 'tell me some interesting facts', 'tell me interesting fact'],
+                          'guess_game': ['let\'s play number guessing game', 'think of a number and i will guess'],
+                          'anger': ['tell some ways to control anger', 'how to control anger'],
+                          'note': ['remember this', 'note this down', 'write it down', 'note it', 'make a note','open a note']}
 
 
 def speak(sentence):
@@ -82,9 +94,6 @@ def wishMe():
     else:
         speak("Good Evening")
 
-    # assname = ("Jarvis 1 point o")
-    speak("I am your Assistant")
-    # speak(assname)
 
 
 def joke_generator():
@@ -118,7 +127,7 @@ def fetch_happy_recommendations_from_internet():
     else:
         r = requests.get(website_urls[1])
         soup = bs(r.text, 'html.parser')
-        results = soup.find_all('div', attrs={'class': 'heading-h3'})
+        results = soup.find_all('h3', attrs={'class': 'heading-h3'})
     # fetching plain text from html results
     for text in results:
         recommendations_list.append(text.string)
@@ -202,6 +211,32 @@ def fetch_interesting_facts_from_internet():
         speak(recommendation)
 
 
+def fetch_temper_controlling_ways_from_internet():
+    anger_control_ways_list = []
+    fetch_anger_control_ways = requests.get('https://www.mayoclinic.org/healthy-lifestyle/adult-health/in-depth/anger-management/art-20045434')
+    soup = bs(fetch_anger_control_ways.text, 'html.parser')
+    results = soup.find_all('h3')
+    rand_index = random.randrange(1, 8)
+
+    for i, text in enumerate(results):
+        anger_control_ways_list.append(text.string)
+        if i == rand_index:
+            break
+
+    for way in anger_control_ways_list:
+        way = re.sub("[^a-zA-Z ]+", "", way).strip()
+        speak(way)
+
+
+def make_note(text):
+    date = datetime.datetime.now().replace(microsecond=0)
+    note_name = 'My_thoughts_' + str(date).replace(':', '-')
+    print(note_name)
+    with open(note_name, 'w') as f:
+        f.write(text)
+    subprocess.Popen(['notepad.exe', note_name])
+
+
 def youtube_opener(id, stop):
     chrome_driver = 'chromedriver.exe'
     browser = webdriver.Chrome(chrome_driver)
@@ -229,6 +264,7 @@ def youtube_opener(id, stop):
 
 
 def youtube_handler(userdemand):
+    words_to_replace = ['please','play','by','on','youtube']
     random_user_demands = ['anything', 'whatever you like', 'something']
     geners = ['comedy', 'vlogs', 'gaming videos', 'educational videos', 'songs', 'motivational videos']
     random_song_demands = ['any song', 'some song', 'a song', 'any music', 'play some music', 'play any song']
@@ -238,7 +274,7 @@ def youtube_handler(userdemand):
 
     if userdemand in random_user_demands:
         searchquery = random.choice(geners)
-    elif userdemand == 'funny':
+    elif userdemand == 'funny' or userdemand == 'comedy':
         searchquery = 'comedy'
     elif userdemand == 'play some music on youtube':
         searchquery = random.choice(song_geners)
@@ -247,7 +283,7 @@ def youtube_handler(userdemand):
     elif userdemand == geners[3]:
         searchquery = geners[3]
     else:
-        searchquery = userdemand.replace('play ', '').replace(' by on youtube', '')
+        searchquery = ' '.join(['' if word in words_to_replace else word for word in userdemand.split()])
     print('playing ', searchquery)
     videos_search = VideosSearch(searchquery, limit=5)
     video_id = videos_search.result()['result'][random.randrange(5)]['id']
@@ -300,6 +336,13 @@ def universal_action():
     elif command in universal_command_dict['guess_game']:
         speak('ok let\'s play')
         guess_num()
+    elif command in universal_command_dict['anger']:
+        speak('Here are some ways to control your anger')
+        fetch_temper_controlling_ways_from_internet()
+    elif command in universal_command_dict['note']:
+        speak('what would you like me to note down?')
+        command = get_audio()
+        make_note(command)
     else:
         speak('Sorry, I am not able to perform your desired action.')
         return
@@ -360,8 +403,34 @@ def decision(mood):
         elif verified_command in user_responses_dict['negative']:
             speak('what would you like to do?')
             universal_action()
-
-
+    elif mood == 'angry':
+        speak(random.choice(Phrases_dict['angry']))
+        action = random.choice(actions_dict['angry'])
+        i = actions_dict['angry'].index(action)
+        speak(action)
+        command = get_audio()
+        verified_command = command_checker(command)
+        if verified_command in user_responses_dict['positive']:
+            if i == 0:
+                command = 'relaxing music'
+                youtube_handler(command)
+            else:
+                fetch_temper_controlling_ways_from_internet()
+        elif verified_command in user_responses_dict['negative']:
+            speak('what would you like to do?')
+            universal_action()
+    else:
+        speak(random.choice(Phrases_dict['surprise']))
+        speak(random.choice(actions_dict['surprise']))
+        command = get_audio()
+        verified_command = command_checker(command)
+        if verified_command in user_responses_dict['positive']:
+            speak('what would you like to note down?')
+            command = get_audio()
+            make_note(command)
+        elif verified_command in user_responses_dict['negative']:
+            speak('what would you like to do?')
+            universal_action()
 if __name__ == '__main__':
-    decision('neutral')
+    decision('surprise')
 #   guess_num()
