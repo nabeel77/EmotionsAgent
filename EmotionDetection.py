@@ -5,82 +5,54 @@ Things to be done in this python file:
 - Agent calls
 '''
 
-import ctypes
 import cv2
 import time
 import queue
-import argparse
-import threading
-import concurrent.futures
 import numpy as np
 import TrainingModels as tm
 from threading import Thread
 import PersonalAssistant as pa
 from keras.models import load_model
-import multiprocessing
-from multiprocessing import Process, Array, Value
 from keras.preprocessing.image import img_to_array
 
-WAKE_WORD = 'hey bro'
+WAKE_WORD = 'hey assistant'
 height, width = 48, 48
 batch_size = 64
 validation_data_dir = './fer2013/validation'
 label = ''
-# wake = multiprocessing.Value('i', 0)
 wake = ''
-classifier = load_model('./model2.h5')
-print('model loaded')
+classifier = load_model('./ResNet50.h5')
 
 validation_generator = tm.get_datagen(validation_data_dir)
 class_labels = validation_generator.class_indices
 class_labels = {v: k for k, v in class_labels.items()}
 classes = list(class_labels.values())
-print(classes)
 
 face_classifier = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
 
 
-def face_detector_color(img):
-    color = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    faces = face_classifier.detectMultiScale(color, 1.3, 5)
-    if faces is ():
-        return (0, 0, 0, 0), np.zeros((197, 197), np.uint8), img
-
-    for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        roi_color = color[y:y + h, x:x + w]
-
-    try:
-        roi_color = cv2.resize(roi_color, (197, 197), interpolation=cv2.INTER_AREA)
-    except:
-        return (x, w, y, h), np.zeros((197, 197), np.uint8), img
-    return (x, w, y, h), roi_color, img
-
-
-def face_detector(img):
-    # Convert image to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+def face_detector(img, color=cv2.COLOR_BGR2GRAY, size=48):
+    '''
+    :param img: img file in which the face needs to be detected
+    :param color: default value is cv2.COLOR_BGR2GRAY. cv2.COLOR_BGR2RGB should be passed if emotion detection
+                  is being done by ResNet50.
+    :param size: default value is 48, 197 should be passed if emotion detection is being done by using Resnet50
+    :return: return the image file with the triangle around the detected face.
+    '''
+    gray = cv2.cvtColor(img, color)
     faces = face_classifier.detectMultiScale(gray, 1.3, 5)
     if faces is ():
-        return (0, 0, 0, 0), np.zeros((48, 48), np.uint8), img
+        return (0, 0, 0, 0), np.zeros((size, size), np.uint8), img
 
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
         roi_gray = gray[y:y + h, x:x + w]
 
     try:
-        roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+        roi_gray = cv2.resize(roi_gray, (size, size), interpolation=cv2.INTER_AREA)
     except:
-        return (x, w, y, h), np.zeros((48, 48), np.uint8), img
+        return (x, w, y, h), np.zeros((size, size), np.uint8), img
     return (x, w, y, h), roi_gray, img
-
-
-name = 'Hello Nabeel, how are you'
-
-
-def startSoundThread(sentence):
-    mus = Thread(target=pa.speak, args=[sentence])
-    mus.start()
 
 
 def emotion_detector(rect, face, image):
@@ -99,58 +71,49 @@ def emotion_detector(rect, face, image):
     return label
 
 
-def make_prediction(queue=queue.Queue()):
+def make_prediction(q=queue.Queue()):
     global label
     global wake
     cap = cv2.VideoCapture(0)
-    print('name is: ', threading.current_thread().name)
-    print(threading.get_ident())
     while True:
         ret, frame = cap.read()
-        rect, face, image = face_detector(frame)
-        if wake == 'hey bro':
+        rect, face, image = face_detector(frame, color=cv2.COLOR_BGR2RGB, size=197)
+        if wake == 'hey assistant':
             label = emotion_detector(rect, face, image)
-            queue.put(label)
-        cv2.imshow('All', image)
-        if cv2.waitKey(1) == 13:
+            q.put(label)
+        cv2.imshow('Intelligent Agent', image)
+        if cv2.waitKey(1) == 13 :
             break
     cap.release()
     cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
-    # print('name is: ', threading.current_thread().name)
-    # print(threading.get_ident())
     queue = queue.Queue()
-    m = Thread(target=make_prediction, args=(queue,))
-    m.start()
-    time.sleep(3)
+    emotion_detection_thread = Thread(target=make_prediction, args=(queue,))
+    emotion_detection_thread.start()
+    time.sleep(5)
     while True:
         print('Listening')
         text = pa.get_audio()
         if text.count(WAKE_WORD) > 0:
-            wake = 'hey bro'
-            print(f'i am {wake}')
-            while wake == 'hey bro':
+            wake = 'hey assistant'
+            while wake == 'hey assistant':
                 time.sleep(4)
-                result = queue.get()
-                print('dasda', result)
-                speak_thread = Thread(target=pa.decision, args=(result.lower(),))
-                print('started thread')
-                speak_thread.start()
-                speak_thread.join()
+                emotion = queue.get()
+                agent_thread = Thread(target=pa.decision, args=(emotion.lower(),))
+                agent_thread.start()
+                agent_thread.join()
                 end_confirm = Thread(target=pa.speak, args=['is there anything else i can do for you?'])
                 end_confirm.start()
                 end_confirm.join()
                 text = pa.get_audio()
-                if text == 'no' or text == 'stop':
-                    wake = 'stop bro'
+                if text.count('no') > 0  or text.count('stop') > 0 :
+                    wake = 'stop emotion detection'
                     break
         elif text == 'stop':
-            wake = 'good bye'
-            speak_thread = Thread(target=pa.speak, args=[wake])
+            wake = ''
+            speak_thread = Thread(target=pa.speak, args=['Good bye.'])
             speak_thread.start()
             speak_thread.join()
-            # break
-    # for t in threading.enumerate():
-    #         print(t.name)
+            break
