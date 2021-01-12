@@ -39,6 +39,7 @@ def face_detector(img, color=cv2.COLOR_BGR2GRAY, size=48):
     :param size: default value is 48, 197 should be passed if emotion detection is being done by using Resnet50
     :return: return the image file with the triangle around the detected face.
     '''
+
     gray = cv2.cvtColor(img, color)
     faces = face_classifier.detectMultiScale(gray, 1.3, 5)
     if faces is ():
