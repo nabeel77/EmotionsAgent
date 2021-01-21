@@ -15,13 +15,13 @@ import PersonalAssistant as pa
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 
-WAKE_WORD = 'hey assistant'
+WAKE_WORD = 'hi assistant'
 height, width = 48, 48
 batch_size = 64
 validation_data_dir = './fer2013/validation'
 label = ''
 wake = ''
-classifier = load_model('./ResNet50.h5')
+classifier = load_model('./FERC2.h5')
 
 validation_generator = tm.get_datagen(validation_data_dir)
 class_labels = validation_generator.class_indices
@@ -78,10 +78,12 @@ def make_prediction(q=queue.Queue()):
     cap = cv2.VideoCapture(0)
     while True:
         ret, frame = cap.read()
-        rect, face, image = face_detector(frame, color=cv2.COLOR_BGR2RGB, size=197)
-        if wake == 'hey assistant':
+        cv2.namedWindow('Intelligent Agent', cv2.WINDOW_NORMAL)
+        rect, face, image = face_detector(frame)
+        if wake == WAKE_WORD:
             label = emotion_detector(rect, face, image)
             q.put(label)
+        cv2.setWindowProperty('Intelligent Agent', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Intelligent Agent', image)
         if cv2.waitKey(1) == 13 :
             break
@@ -93,16 +95,16 @@ if __name__ == '__main__':
     queue = queue.Queue()
     emotion_detection_thread = Thread(target=make_prediction, args=(queue,))
     emotion_detection_thread.start()
-    time.sleep(5)
+    time.sleep(3)
     while True:
         print('Listening')
         text = pa.get_audio()
         if text.count(WAKE_WORD) > 0:
-            wake = 'hey assistant'
-            while wake == 'hey assistant':
-                time.sleep(4)
-                emotion = queue.get()
-                agent_thread = Thread(target=pa.decision, args=(emotion.lower(),))
+            wake = 'hi assistant'
+            while wake == 'hi assistant':
+                time.sleep(3)
+                print(label)
+                agent_thread = Thread(target=pa.decision, args=(label.lower(),))
                 agent_thread.start()
                 agent_thread.join()
                 end_confirm = Thread(target=pa.speak, args=['is there anything else i can do for you?'])
