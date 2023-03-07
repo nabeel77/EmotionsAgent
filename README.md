@@ -12,3 +12,11 @@ How to use:
 ## Output 
 <img width="649" alt="Screenshot 2023-03-07 at 12 29 46" src="https://user-images.githubusercontent.com/35597590/223396910-62645763-c1ad-4a64-9b2c-f26a7fc32a07.png">
 
+
+<img width="654" alt="Screenshot 2023-03-07 at 12 30 13" src="https://user-images.githubusercontent.com/35597590/223397214-07b20a32-6ee8-464a-94a2-556baf248f35.png">
+
+<img width="305" alt="Screenshot 2023-03-07 at 12 29 18" src="https://user-images.githubusercontent.com/35597590/223397234-1033dcbf-36cd-48f1-b54f-b5d7773dd0e4.png">
+
+<img width="304" alt="Screenshot 2023-03-07 at 12 29 10" src="https://user-images.githubusercontent.com/35597590/223397253-d3c2f20f-bd58-451f-abb4-048f9c358834.png">
+
+
