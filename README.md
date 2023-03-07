@@ -8,3 +8,7 @@ How to use:
   OpenCv, Keras, selenium (for playing youtube videos), speech_recognition (for speech to text), pyttsx3 (for text to speech) beautifulsoup (for web scrapping),requests (for making a url search on browser for  web scrapping, youtubesearchpython (for making a search on youtube). <br/>
 - Run EmotionDetection.py file (This is the start point of the intelligent agent for human like interactions i.e. An agent with vision to detect human emotions)
 - After initiating the program and opening the face detection window, say "hi assistant" to activate the voice assistant. At this stage, the system will begin detecting facial expressions and execute specific tasks depending on the expression detected.
+
+## Output 
+<img width="649" alt="Screenshot 2023-03-07 at 12 29 46" src="https://user-images.githubusercontent.com/35597590/223396910-62645763-c1ad-4a64-9b2c-f26a7fc32a07.png">
+
